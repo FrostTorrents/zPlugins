@@ -1,0 +1,148 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.openosrs.externals",
+    "module": "zSandCrabs",
+    "version": "1.0.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.2.1",
+      "buildId": "fjma3uouqrd7haori5z5orzbku"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "zSandCrabs-1.0.2.jar",
+          "url": "zSandCrabs-1.0.2.jar",
+          "size": 12068,
+          "sha512": "50448e6db7fed93a847b0dc8ac42c32f6cda283c39fef1c7d6dbb63cc1bdce27696e2689f96a3944b77c0df6ffd1034a92f6020f980ece47ebaf0d843dc9eb09",
+          "sha256": "3ecec05ae3a37862b36be8dca63cec6c85728615c51b5d05e50fb2b08e373336",
+          "sha1": "83652e66c5ef542baf2129c802026be8c341d380",
+          "md5": "d5b97d03ff6a2978ad1b2d297fdb5665"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "ch.qos.logback",
+          "module": "logback-classic",
+          "version": {
+            "requires": "1.2.3"
+          }
+        },
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "2.8.6"
+          }
+        },
+        {
+          "group": "com.google.guava",
+          "module": "guava",
+          "version": {
+            "requires": "28.2-jre"
+          }
+        },
+        {
+          "group": "com.google.inject",
+          "module": "guice",
+          "version": {
+            "requires": "4.2.3"
+          },
+          "thirdPartyCompatibility": {
+            "artifactSelector": {
+              "name": "guice",
+              "type": "jar",
+              "extension": "jar",
+              "classifier": "no_aop"
+            }
+          }
+        },
+        {
+          "group": "com.squareup.okhttp3",
+          "module": "okhttp",
+          "version": {
+            "requires": "4.5.0"
+          }
+        },
+        {
+          "group": "io.reactivex.rxjava3",
+          "module": "rxjava",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "net.sf.jopt-simple",
+          "module": "jopt-simple",
+          "version": {
+            "requires": "5.0.4"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-text",
+          "version": {
+            "requires": "1.8"
+          }
+        },
+        {
+          "group": "org.pf4j",
+          "module": "pf4j",
+          "version": {
+            "requires": "3.2.0"
+          }
+        },
+        {
+          "group": "org.projectlombok",
+          "module": "lombok",
+          "version": {
+            "requires": "1.18.12"
+          }
+        },
+        {
+          "group": "org.pushing-pixels",
+          "module": "radiance-substance",
+          "version": {
+            "requires": "2.5.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "zSandCrabs-1.0.2.jar",
+          "url": "zSandCrabs-1.0.2.jar",
+          "size": 12068,
+          "sha512": "50448e6db7fed93a847b0dc8ac42c32f6cda283c39fef1c7d6dbb63cc1bdce27696e2689f96a3944b77c0df6ffd1034a92f6020f980ece47ebaf0d843dc9eb09",
+          "sha256": "3ecec05ae3a37862b36be8dca63cec6c85728615c51b5d05e50fb2b08e373336",
+          "sha1": "83652e66c5ef542baf2129c802026be8c341d380",
+          "md5": "d5b97d03ff6a2978ad1b2d297fdb5665"
+        }
+      ]
+    }
+  ]
+}

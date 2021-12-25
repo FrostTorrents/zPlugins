@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Plugin-Version: 1.0.2
+Plugin-Id: zsandcrabs-plugin
+Plugin-Provider: Zackaery#3475
+Plugin-Dependencies: iutils-plugin, chinbreakhandler-plugin
+Plugin-Description: deaggros npc such as crabs
+Plugin-License: 3-Clause BSD License
+
