@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.zSandCrabs;
+package net.runelite.client.plugins.zStyleSwitcher;
 
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +27,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.game.WorldService;
 
 
 
@@ -40,7 +41,43 @@ import net.runelite.client.plugins.iutils.MenuUtils;
 import net.runelite.client.plugins.iutils.MouseUtils;
 import net.runelite.client.plugins.iutils.ObjectUtils;
 import net.runelite.client.plugins.iutils.PlayerUtils;
+import net.runelite.client.plugins.iutils.game.iPlayer;
 
+import com.google.inject.Provides;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.*;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.PlayerSpawned;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.WidgetItem;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.PvPUtil;
+import net.runelite.client.util.WorldUtil;
+import net.runelite.http.api.worlds.World;
+import net.runelite.http.api.worlds.WorldResult;
+import org.pf4j.Extension;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+
+import static java.awt.event.KeyEvent.VK_ENTER;
 
 import org.pf4j.Extension;
 
@@ -58,22 +95,25 @@ import static net.runelite.api.MenuAction.*;
 @Extension
 @PluginDependency(iUtils.class)
 @PluginDescriptor(
-	name = "zSandCrabs",
+	name = "zStyleSwitcher",
 	enabledByDefault = false,
 	description = "Kills sand crabs on Hosidius beach.",
-	tags = {"z, sand, crabs, zackaery"}
+	tags = {"z*, sand, crabs, zackaery"}
 
 )
 @Slf4j
-public class zSandCrabsPlugin extends Plugin {
+public class zStyleSwitcherPlugin extends Plugin {
 	@Inject
 	private Client client;
 
 	@Inject
-	private zSandCrabsConfiguration config;
+	private zStyleSwitcherConfiguration config;
 
 	@Inject
 	private iUtils utils;
+
+	@Inject
+	private WorldService worldService;
 
 	@Inject
 	private ActionQueue action;
@@ -103,7 +143,7 @@ public class zSandCrabsPlugin extends Plugin {
 	private OverlayManager overlayManager;
 
 	@Inject
-	private zSandCrabsOverlay overlay;
+	private zStyleSwitcherOverlay overlay;
 
 	@Inject
 	private BankUtils bank;
@@ -116,6 +156,12 @@ public class zSandCrabsPlugin extends Plugin {
 
 	@Inject
 	private WalkUtils walk;
+
+	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private ExecutorService executor;
 
 	@Inject
 	private ConfigManager configManager;
@@ -140,11 +186,13 @@ public class zSandCrabsPlugin extends Plugin {
 	boolean plugStarted = false;
 	int timeRun;
 	String NPCToAttack;
-	int randomVariationInTime;
+	int resetTimeRandomization;
 
 	Instant totalTimer;
-	WorldPoint customLocation;
-	WorldPoint resetLocation;
+	WorldPoint customNPCLocation;
+	WorldPoint customResetLocation;
+	WorldPoint customHopLocation = new WorldPoint(1778, 3482, 0);
+
 
 
 	boolean startBot;
@@ -156,35 +204,31 @@ public class zSandCrabsPlugin extends Plugin {
 	boolean waiting;
 	boolean specAllowed;
 	boolean goReset;
+	boolean hopWorld;
+	boolean hopWorldX;
+
 	String status;
 
 	int randVar;
 	int resetTime;
 
 	@Provides
-	zSandCrabsConfiguration provideConfig(ConfigManager configManager) {
-		return configManager.getConfig(zSandCrabsConfiguration.class);
+	zStyleSwitcherConfiguration provideConfig(ConfigManager configManager) {
+		return configManager.getConfig(zStyleSwitcherConfiguration.class);
 	}
 
 	@Override
 	protected void startUp()
 	{
-
-
 	}
-
 
 	@Override
 	protected void shutDown() {
 
-		log.info("zSandCrabs --- Has been stopped.");
+		log.info("zStyleSwitcher --- Has been stopped.");
 		overlayManager.remove(overlay);
 
 	}
-
-
-
-
 
 	private long sleepDelay() {
 		sleepLength = calc.randomDelay(config.sleepWeightedDistribution(), config.sleepMin(), config.sleepMax(), config.sleepDeviation(), config.sleepTarget());
@@ -201,13 +245,13 @@ public class zSandCrabsPlugin extends Plugin {
 	@Subscribe
 	public void onConfigButtonClicked(ConfigButtonClicked event) {
 
-		if (!event.getGroup().equalsIgnoreCase("zSandCrabs")) {
+		if (!event.getGroup().equalsIgnoreCase("zStyleSwitcher")) {
 			return;
 		}
 
 		if (event.getKey().equals("startButton")){
 			if(!plugStarted){
-				log.info("zSandCrabs --- Has been started.");
+				log.info("zStyleSwitcher --- Has been started.");
 				setLocations();
 				botTimer = Instant.now();
 				totalTimer = Instant.now();
@@ -218,26 +262,108 @@ public class zSandCrabsPlugin extends Plugin {
 				waiting = false;
 				specAllowed = config.enableSpec();
 				specCost = config.specCost();
+				hopWorld = config.worldHop();
 				goReset = false;
-				resetTime= config.resetTime();
+				resetTime = config.resetTime();
 				NPCToAttack = config.npcName();
-				randomVariationInTime =
+				resetTimeRandomization =
 						calc.getRandomIntBetweenRange(0,config.resetTimeRandomization());
 				plugStarted = true;
 				overlayManager.add(overlay);
 
 			}else if(plugStarted){
-				utils.sendGameMessage("zSandCrabs --- Stopping.");
+				utils.sendGameMessage("zStyleSwitcher --- Stopping.");
 				overlayManager.remove(overlay);
 				startBot = false;
 				plugStarted = false;
 				//timeRuns = config.customTime();
 			}else{
-				utils.sendGameMessage("zSandCrabs --- Encountered unknown error");
+				utils.sendGameMessage("zStyleSwitcher --- Encountered unknown error");
+			}
+		}
+
+		if (event.getKey().equals("forceDeaggro")){
+			if(plugStarted){
+				log.info("zStyleSwitcher --- Resetting Aggro.");
+				botTimer = Instant.now();
+				walkToCrab = true;
+				startBot = true;
+				walkBack = false;
+				waiting = false;
+				specAllowed = config.enableSpec();
+				specCost = config.specCost();
+				hopWorld = config.worldHop();
+				goReset = true;
+				resetTime = config.resetTime();
 			}
 		}
 	}
 
+	private int getValidWorld() {
+		WorldResult result = worldService.getWorlds();
+		if (result == null)
+			return -1;
+		List<World> worlds = result.getWorlds();
+		Collections.shuffle(worlds);
+		for (World w : worlds) {
+			if (client.getWorld() == w.getId())
+				continue;
+
+			if (w.getTypes().contains(net.runelite.http.api.worlds.WorldType.HIGH_RISK) ||
+					w.getTypes().contains(net.runelite.http.api.worlds.WorldType.DEADMAN) ||
+					w.getTypes().contains(net.runelite.http.api.worlds.WorldType.PVP) ||
+					w.getTypes().contains(net.runelite.http.api.worlds.WorldType.SKILL_TOTAL) ||
+					w.getTypes().contains(net.runelite.http.api.worlds.WorldType.BOUNTY))
+				continue;
+			return w.getId();
+		}
+		return -1;
+	}
+
+	private void hopToWorld(int worldId) {
+		assert client.isClientThread();
+
+		WorldResult worldResult = worldService.getWorlds();
+		// Don't try to hop if the world doesn't exist
+		World world = worldResult.findWorld(worldId);
+		if (world == null) {
+			return;
+		}
+
+		final net.runelite.api.World rsWorld = client.createWorld();
+		rsWorld.setActivity(world.getActivity());
+		rsWorld.setAddress(world.getAddress());
+		rsWorld.setId(world.getId());
+		rsWorld.setPlayerCount(world.getPlayers());
+		rsWorld.setLocation(world.getLocation());
+		rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
+
+		if (client.getGameState() == GameState.LOGIN_SCREEN) {
+			// on the login screen we can just change the world by ourselves
+			client.changeWorld(rsWorld);
+			return;
+		}
+
+		if (client.getWidget(WidgetInfo.WORLD_SWITCHER_LIST) == null) {
+			client.openWorldHopper();
+
+			executor.submit(() -> {
+				try {
+					Thread.sleep(25 + ThreadLocalRandom.current().nextInt(125));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				injector.getInstance(ClientThread.class).invokeLater(() -> {
+					if (client.getWidget(WidgetInfo.WORLD_SWITCHER_LIST) != null)
+						client.hopToWorld(rsWorld);
+				});
+			});
+		} else {
+			client.hopToWorld(rsWorld);
+		}
+
+
+	}
 
 	@Subscribe
 	private void onGameTick(GameTick tick) {
@@ -253,18 +379,19 @@ public class zSandCrabsPlugin extends Plugin {
 			String state = getState();
 			switch (state){
 			case "GOTOCRAB":
-				if (player.getWorldLocation().distanceTo(customLocation) > 0 && !player.isMoving()) {
-					walk.sceneWalk(customLocation,0,sleepDelay());
+				if (player.getWorldLocation().distanceTo(customNPCLocation) > 0 && !player.isMoving()) {
+					walk.sceneWalk(customNPCLocation,0,sleepDelay());
 					status = "Walking to --- Starter Tile Location.";
 					timeout = tickDelay();
 					break;
-				}else if(player.getWorldLocation().distanceTo(customLocation) > 0 && player.isMoving()){
+				}else if(player.getWorldLocation().distanceTo(customNPCLocation) > 0 && player.isMoving()){
 					log.info("Player is currently moving, waiting until player has reached Starter Tile Location.");
 					timeout = tickDelay();
 					return;
 				} else{
 					walkToCrab = false;
 					waiting = true;
+					hopWorld = false;
 					botTimer = Instant.now();
 
 				}
@@ -273,7 +400,7 @@ public class zSandCrabsPlugin extends Plugin {
 					timeRan = (int) duration.getSeconds();
 					status = "Waiting for Reset Timer to end.";
 					timeTillReset = (resetTime) - timeRan;
-					if (timeRan > resetTime + randomVariationInTime) {
+					if (timeRan > resetTime + resetTimeRandomization) {
 						if(isInCombat()){
 							timeRun -= 15;
 							timeout = tickDelay();
@@ -281,46 +408,62 @@ public class zSandCrabsPlugin extends Plugin {
 						}else{
 							waiting = false;
 							goReset = true;
-							randomVariationInTime = calc.getRandomIntBetweenRange(0,config.resetTimeRandomization());
+							resetTimeRandomization = calc.getRandomIntBetweenRange(0,config.resetTimeRandomization());
 							return;
 						}
-
-
-
 					}else{
 						checkIfLeftMainTile();
+						checkIfPlayerCrashed();
 						timeout = tickDelay();
 						return;
 					}
 
 				case "WANDERED":
-					walk.sceneWalk(customLocation,0,sleepDelay());
+					walk.sceneWalk(customNPCLocation,0,sleepDelay());
 					status = "Walking back to Sand Crabs. ";
 					walkBack = false;
+					hopWorld = false;
 					timeout = tickDelay()+ 3;
 					return;
 
 				case "RESETTING":
-					if (player.getWorldLocation().distanceTo(resetLocation) > 4 && !player.isMoving()) {
+					if (player.getWorldLocation().distanceTo(customResetLocation) > 4 && !player.isMoving()) {
 						utils.sendGameMessage("Walking to --- Reset Tile Location");
-						walk.sceneWalk(resetLocation,0,sleepDelay());
+						walk.sceneWalk(customResetLocation,0,sleepDelay());
 						timeout = tickDelay();
 						status = "Resetting";
-					}else if(player.getWorldLocation().distanceTo(resetLocation) > 4 && player.isMoving()){
+					}else if(player.getWorldLocation().distanceTo(customResetLocation) > 4 && player.isMoving()){
 						log.debug("Player is currently moving, , waiting until player has reached Reset Tile Location.");
 						timeout = tickDelay();
 					} else{
 						walkToCrab = true;
 						goReset = false;
+						hopWorld = false;
 					}
-
-
+				case "HOPWORLDS":
+					if (player.getWorldLocation().equals(customNPCLocation) && !player.isMoving() && config.worldHop()) {
+						utils.sendGameMessage("Hopping worlds --- Player crashed.");
+						walk.sceneWalk(customHopLocation,0,sleepDelay());
+						timeout = tickDelay();
+						hopWorld = false;
+						hopWorldX = true;
+						status = "Walking to hop location.";
+					}else if(player.getWorldLocation().distanceTo(customHopLocation) > 4 && player.isMoving()){
+						log.debug("Player is currently moving, , waiting until player has reached Hop Tile Location.");
+						timeout = tickDelay();
+					} else{
+						hopWorld = false;
+						walkToCrab = false;
+						goReset = true;
+					}
+				case "HOPWORLDSX":
+					if (hopWorldX == true && !player.isMoving() && config.worldHop()){
+						hopToWorld(getValidWorld());
+						status = "Hopping Worlds";
+					}
+				}
 			}
-
-
 		}
-
-	}
 
 	private String getState() {
 		if (walkToCrab) {
@@ -334,6 +477,12 @@ public class zSandCrabsPlugin extends Plugin {
 		}
 		if (goReset) {
 			return "RESETTING";
+		}
+		if (hopWorld) {
+			return "HOPWORLDS";
+		}
+		if (hopWorldX) {
+			return "HOPWORLDSX";
 		} else {
 			return "IDLE";
 		}
@@ -350,10 +499,10 @@ public class zSandCrabsPlugin extends Plugin {
 	}
 
 	private void setLocations() {
-	customLocation = converStringToWorldPoint(config.customNPCLocation());
+	customNPCLocation = convertStringToWorldPoint(config.customNPCLocation());
 
-	resetLocation = converStringToWorldPoint(config.customResetLocation());
-	System.out.println(customLocation + "hello + " + resetLocation);
+	customResetLocation = convertStringToWorldPoint(config.customResetLocation());
+	System.out.println(customNPCLocation + "hello + " + customResetLocation);
 
 
 	}
@@ -361,8 +510,8 @@ public class zSandCrabsPlugin extends Plugin {
 	private void checkIfLeftMainTile(){
 		int plX = player.getWorldLocation().getX();
 		int plY = player.getWorldLocation().getY();
-		int clX = customLocation.getX();
-		int clY = customLocation.getY();
+		int clX = customNPCLocation.getX();
+		int clY = customNPCLocation.getY();
 
 		if(plX == clX && plY==clY){
 			//System.out.println(plX + " "+ plY + " +is the world location and custom location is  " + clX + " " + clY);
@@ -376,10 +525,14 @@ public class zSandCrabsPlugin extends Plugin {
 		}
 	}
 
+	private void checkIfPlayerCrashed() {
+		if (!player.getWorldLocation().equals(customNPCLocation) && !player.isMoving() && config.worldHop()) {
+		} else {
+			hopWorld = true;
+		}
+	}
 
-
-
-	private WorldPoint converStringToWorldPoint(String location){
+	private WorldPoint convertStringToWorldPoint(String location){
 		int [] userString = utils.stringToIntArray(location);
 		if(userString.length != 3){
 			utils.sendGameMessage("You did not enter WorldPoints in correct format");

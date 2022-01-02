@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.zSandCrabs;
+package net.runelite.client.plugins.zStyleSwitcher;
 
 import com.openosrs.client.ui.overlay.components.table.TableAlignment;
 import com.openosrs.client.ui.overlay.components.table.TableComponent;
@@ -23,17 +23,17 @@ import static org.apache.commons.lang3.time.DurationFormatUtils.formatDuration;
 
 @Slf4j
 @Singleton
-public class zSandCrabsOverlay extends OverlayPanel {
+public class zStyleSwitcherOverlay extends OverlayPanel {
 
     private final Client client;
-    private final zSandCrabsPlugin plugin;
-    private final zSandCrabsConfiguration config;
+    private final zStyleSwitcherPlugin plugin;
+    private final zStyleSwitcherConfiguration config;
 
     String timeFormat;
     private String infoStatus = "Starting...";
 
     @Inject
-    public zSandCrabsOverlay(Client client, zSandCrabsPlugin plugin, zSandCrabsConfiguration config) {
+    public zStyleSwitcherOverlay(Client client, zStyleSwitcherPlugin plugin, zStyleSwitcherConfiguration config) {
         super(plugin);
         setPosition(OverlayPosition.TOP_LEFT);
         this.client = client;
@@ -67,7 +67,7 @@ public class zSandCrabsOverlay extends OverlayPanel {
             panelComponent.setPreferredSize(new Dimension(200, 200));
             panelComponent.setBorder(new Rectangle(5, 5, 5, 5));
             panelComponent.getChildren().add(TitleComponent.builder()
-                    .text("zSandCrabs")
+                    .text("zStyleSwitcher")
                     .color(ColorUtil.fromHex("#40C4FF"))
                     .build());
             if (plugin.startBot) {

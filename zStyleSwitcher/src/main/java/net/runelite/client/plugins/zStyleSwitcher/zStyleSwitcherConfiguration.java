@@ -23,14 +23,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.zSandCrabs;
+package net.runelite.client.plugins.zStyleSwitcher;
 
 import net.runelite.client.config.*;
 import net.runelite.client.config.ConfigTitle;
 
 
-@ConfigGroup("zSandCrabs")
-public interface zSandCrabsConfiguration extends Config
+@ConfigGroup("zStyleSwitcher")
+public interface zStyleSwitcherConfiguration extends Config
 {
 
 	@ConfigSection(
@@ -213,14 +213,22 @@ public interface zSandCrabsConfiguration extends Config
 		return "Please enter in your Starter Tile Location, and Reset Tile Location coordinates in below.";
 	}
 
+	@ConfigItem(
+			keyName = "npcResetAggro",
+			name = "Custom Tile Coordinates",
+			description = "Enable this if you'd like to use custom coordinates.",
+			position = 20
+	)
+	default boolean npcResetAggro() { return false; }
 
 	@ConfigItem(
 			keyName = "customNPCLocation",
 			name = "Starter Tile Location",
 			description = "Enter the location you want to kill Sand Crabs at. (x,y,z).",
-			position = 40,
-			title = "Custom Locations"
-
+			position = 21,
+			title = "Custom Locations",
+			hidden = true,
+			unhide = "npcResetAggro"
 	)
 	default String customNPCLocation()
 	{
@@ -231,21 +239,50 @@ public interface zSandCrabsConfiguration extends Config
 			keyName = "customResetLocation",
 			name = "Reset Tile Location",
 			description = "Enter the location you want to Reset Aggro at. (x,y,z).",
-			position = 50,
-			title = "Custom Locations"
-
+			position = 22,
+			title = "Custom Locations",
+			hidden = true,
+			unhide = "npcResetAggro"
 	)
 	default String customResetLocation()
 	{
 		return "1778,3500,0";
 	}
 
+	@ConfigItem(
+			keyName = "npcName",
+			name = "NPC Name",
+			description = "Enter the exact name of the NPC",
+			position = 23,
+			hidden = true,
+			unhide = "npcResetAggro"
+	)
+	default String npcName()
+	{
+		return "Sand Crab";
+	}
+
+	@ConfigItem(
+			keyName = "sandCrabs",
+			name = "Sand Crabs",
+			description = "Enable this if you'd like to use the default sand crabs plugin.",
+			position = 30
+	)
+	default boolean sandCrabs() { return false; }
+
+	@ConfigItem(
+			keyName = "worldHop",
+			name = "Enable World Hopping",
+			description = "Enable this if you'd like to hop worlds if a player is crashing you.",
+			position = 40
+	)
+	default boolean worldHop() { return false; }
 
 	@ConfigItem(
 			keyName = "resetTime",
 			name = "Reset Time",
 			description = "How long to wait before resetting",
-			position = 55,
+			position = 50,
 			hidden = true
 	)
 	default int resetTime()
@@ -255,9 +292,9 @@ public interface zSandCrabsConfiguration extends Config
 
 	@ConfigItem(
 			keyName = "resetTimeRandomization",
-			name = "Reset Time Randomization",
+			name = "Reset Time Randomizer",
 			description = "Random Deviation - Timer Reset (in Seconds)",
-			position = 56
+			position = 51
 	)
 	default int resetTimeRandomization()
 	{
@@ -265,24 +302,10 @@ public interface zSandCrabsConfiguration extends Config
 	}
 
 	@ConfigItem(
-			keyName = "npcName",
-			name = "NPC Name",
-			description = "Enter the exact name of the NPC",
-			position = 57,
-			hidden = true
-
-
-	)
-	default String npcName()
-	{
-		return "Sand Crab";
-	}
-
-	@ConfigItem(
 			keyName = "enableSpec",
 			name = "Enable Using Special Attack",
 			description = "Enable to turn on using weapon special attack",
-			position = 95
+			position = 60
 
 	)
 	default boolean enableSpec()
@@ -294,10 +317,9 @@ public interface zSandCrabsConfiguration extends Config
 			keyName = "specCost",
 			name = "Spec Cost",
 			description = "Enter the amount of Spec energy it uses",
-			position = 96,
+			position = 61,
 			hidden = true,
 			unhide = "enableSpec"
-
 	)
 	default int specCost()
 	{
@@ -308,7 +330,7 @@ public interface zSandCrabsConfiguration extends Config
 			keyName = "forceDeaggro",
 			name = "Force Reset",
 			description = "Will force a reset run",
-			position = 99
+			position = 100
 	)
 	default Button forceDeaggro()
 	{
@@ -320,7 +342,7 @@ public interface zSandCrabsConfiguration extends Config
 			keyName = "startButton",
 			name = "Start/Stop",
 			description = "on/off plugin",
-			position = 100
+			position = 110
 	)
 	default Button startButton()
 	{

@@ -25,7 +25,8 @@
 
 rootProject.name = "Zackaery Plugins"
 
-include("zSandCrabs")
+include("zNPCDeaggro")
+include("zCrabs")
 
 for (project in rootProject.children) {
     project.apply {

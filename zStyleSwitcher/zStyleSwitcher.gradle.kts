@@ -22,10 +22,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-version = "1.0.2"
+version = "1.0.3"
 
-project.extra["PluginName"] = "zSandCrabs"
-project.extra["PluginDescription"] = "deaggros npc such as crabs"
+project.extra["PluginName"] = "zStyleSwitcher"
+project.extra["PluginDescription"] = "Switches Combat Styles"
 
 dependencies {
     compileOnly(group = "com.openosrs.externals", name = "iutils", version = "4.7.6")
