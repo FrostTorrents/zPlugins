@@ -22,13 +22,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-version = "1.0.3"
+version = "1.0.0"
 
-project.extra["PluginName"] = "zStyleSwitcher"
-project.extra["PluginDescription"] = "Switches Combat Styles"
+project.extra["PluginName"] = "zNPCDeaggro"
+project.extra["PluginDescription"] = "Zackaery - NPCDeaggro Plugin"
 
 dependencies {
-    compileOnly(group = "com.openosrs.externals", name = "iutils", version = "4.7.6")
+    compileOnly(group = "com.openosrs.externals", name = "iutils", version = "4.7.6");
 }
 
 tasks {
